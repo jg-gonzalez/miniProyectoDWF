@@ -36,9 +36,8 @@ public class UsuarioServiceImpl implements UsuarioService {
         return usuarioRepository.findById(id)
                 .map(existing -> {
                     existing.setUsername(usuario.getUsername());
-                    existing.setEmail(usuario.getEmail());
                     existing.setPassword(usuario.getPassword());
-                    existing.setRol(usuario.getRol());
+                    existing.setRole(usuario.getRole()); // aquí usamos role
                     return usuarioRepository.save(existing);
                 })
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con id " + id));
@@ -47,5 +46,10 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     public void deleteUsuario(Long id) {
         usuarioRepository.deleteById(id);
+    }
+
+    @Override
+    public Optional<Usuario> getUsuarioByUsername(String username) {
+        return usuarioRepository.findByUsername(username);
     }
 }
