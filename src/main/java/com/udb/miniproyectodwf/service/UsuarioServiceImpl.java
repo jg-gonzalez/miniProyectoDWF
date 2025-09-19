@@ -2,6 +2,7 @@ package com.udb.miniproyectodwf.service;
 
 import com.udb.miniproyectodwf.entity.Usuario;
 import com.udb.miniproyectodwf.repository.UsuarioRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -10,11 +11,8 @@ import java.util.Optional;
 @Service
 public class UsuarioServiceImpl implements UsuarioService {
 
-    private final UsuarioRepository usuarioRepository;
-
-    public UsuarioServiceImpl(UsuarioRepository usuarioRepository) {
-        this.usuarioRepository = usuarioRepository;
-    }
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
     @Override
     public List<Usuario> getAllUsuarios() {
@@ -33,14 +31,8 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     public Usuario updateUsuario(Long id, Usuario usuario) {
-        return usuarioRepository.findById(id)
-                .map(existing -> {
-                    existing.setUsername(usuario.getUsername());
-                    existing.setPassword(usuario.getPassword());
-                    existing.setRole(usuario.getRole()); // aquí usamos role
-                    return usuarioRepository.save(existing);
-                })
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con id " + id));
+        usuario.setId(id);
+        return usuarioRepository.save(usuario);
     }
 
     @Override
