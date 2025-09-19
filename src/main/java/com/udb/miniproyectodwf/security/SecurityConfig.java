@@ -30,8 +30,23 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                        // Permite acceso público a Swagger/OpenAPI
+                        .requestMatchers(
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/api-docs/**",
+                                "/swagger-resources/**",
+                                "/webjars/**"
+                        ).permitAll()
+
+                        // Permite acceso público a endpoints de autenticación
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/usuarios").hasAuthority("ROLE_ADMIN") // ← CAMBIA ESTA LÍNEA
+
+                        // Endpoints que requieren roles específicos
+                        .requestMatchers("/api/usuarios").hasAuthority("ROLE_ADMIN")
+
+                        // Todos los demás endpoints requieren autenticación
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
