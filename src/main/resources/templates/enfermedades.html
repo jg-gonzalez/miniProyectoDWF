@@ -10,7 +10,7 @@
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container">
-        <a class="navbar-brand" href="/dashboard">
+        <a class="navbar-brand" href="/admin/dashboard">
             <i class="fas fa-shield-virus"></i> Sistema Epidemiológico
         </a>
         <div class="navbar-nav ms-auto">
@@ -28,7 +28,7 @@
 
 <div class="container-fluid">
     <div class="row">
-        <!-- En el sidebar de enfermedades.html -->
+        <!-- Sidebar -->
         <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
             <div class="position-sticky pt-3">
                 <ul class="nav flex-column">
@@ -60,10 +60,21 @@
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <h1 class="h2"><i class="fas fa-virus"></i> Catálogo de Enfermedades</h1>
+                <!-- ✅ BOTÓN PARA ADMIN Y LAB -->
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nuevaEnfermedadModal"
-                        th:if="${role == 'ROLE_ADMIN'}">
+                        th:if="${role == 'ROLE_ADMIN' or role == 'ROLE_LAB'}">
                     <i class="fas fa-plus"></i> Nueva Enfermedad
                 </button>
+            </div>
+
+            <!-- Mensajes de éxito/error -->
+            <div th:if="${param.success}" class="alert alert-success">
+                <span th:if="${param.success == 'true'}">✅ Enfermedad creada exitosamente</span>
+                <span th:if="${param.success == 'eliminado'}">✅ Enfermedad eliminada exitosamente</span>
+            </div>
+            <div th:if="${param.error}" class="alert alert-danger">
+                <span th:if="${param.error == 'true'}">❌ Error al crear la enfermedad</span>
+                <span th:if="${param.error == 'eliminar'}">❌ Error al eliminar la enfermedad</span>
             </div>
 
             <!-- Lista de Enfermedades -->
@@ -82,7 +93,7 @@
                                 <th>Descripción</th>
                                 <th>Síntomas</th>
                                 <th>Estado</th>
-                                <th th:if="${role == 'ROLE_ADMIN'}">Acciones</th>
+                                <th>Acciones</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -100,21 +111,31 @@
                                     <span th:if="${enfermedad.activa}" class="badge bg-success">Activa</span>
                                     <span th:if="${!enfermedad.activa}" class="badge bg-danger">Inactiva</span>
                                 </td>
-                                <td th:if="${role == 'ROLE_ADMIN'}">
+                                <td>
+                                    <!-- ✅ EDITAR: Tanto ADMIN como LAB pueden editar -->
                                     <button class="btn btn-sm btn-outline-primary"
-                                            th:onclick="|editarEnfermedad(${enfermedad.id})|">
+                                            th:onclick="|editarEnfermedad(${enfermedad.id})|"
+                                            th:if="${role == 'ROLE_ADMIN' or role == 'ROLE_LAB'}">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-outline-danger"
-                                            th:onclick="|eliminarEnfermedad(${enfermedad.id})|">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                    <button th:if="${enfermedad.activa}"
+
+                                    <!-- ✅ ELIMINAR: Solo ADMIN puede eliminar -->
+                                    <form th:action="@{/admin/enfermedades/{id}/eliminar(id=${enfermedad.id})}"
+                                          method="post" style="display: inline;"
+                                          th:if="${role == 'ROLE_ADMIN'}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                onclick="return confirm('¿Está seguro de eliminar esta enfermedad?')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+
+                                    <!-- ✅ ACTIVAR/DESACTIVAR: Solo ADMIN puede hacerlo -->
+                                    <button th:if="${role == 'ROLE_ADMIN' and enfermedad.activa}"
                                             class="btn btn-sm btn-outline-warning"
                                             th:onclick="|desactivarEnfermedad(${enfermedad.id})|">
                                         <i class="fas fa-ban"></i>
                                     </button>
-                                    <button th:if="${!enfermedad.activa}"
+                                    <button th:if="${role == 'ROLE_ADMIN' and !enfermedad.activa}"
                                             class="btn btn-sm btn-outline-success"
                                             th:onclick="|activarEnfermedad(${enfermedad.id})|">
                                         <i class="fas fa-check"></i>
@@ -135,8 +156,9 @@
     </div>
 </div>
 
-<!-- Modal Nueva Enfermedad (Solo ADMIN) -->
-<div class="modal fade" id="nuevaEnfermedadModal" tabindex="-1" th:if="${role == 'ROLE_ADMIN'}">
+<!-- Modal Nueva Enfermedad - ✅ VISIBLE PARA ADMIN Y LAB -->
+<div class="modal fade" id="nuevaEnfermedadModal" tabindex="-1"
+     th:if="${role == 'ROLE_ADMIN' or role == 'ROLE_LAB'}">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
@@ -180,10 +202,13 @@
                                   placeholder="Recomendaciones de tratamiento..."></textarea>
                     </div>
 
-                    <div class="form-check">
+                    <!-- ✅ ACTIVA: Solo ADMIN puede desactivar -->
+                    <div class="form-check" th:if="${role == 'ROLE_ADMIN'}">
                         <input class="form-check-input" type="checkbox" name="activa" checked>
                         <label class="form-check-label">Enfermedad activa</label>
                     </div>
+                    <!-- ✅ Para LAB, siempre activa y oculta -->
+                    <input th:if="${role == 'ROLE_LAB'}" type="hidden" name="activa" value="true">
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -199,18 +224,6 @@
     function editarEnfermedad(id) {
         alert('Editar enfermedad: ' + id);
         // Implementar edición
-    }
-
-    function eliminarEnfermedad(id) {
-        if (confirm('¿Está seguro de eliminar esta enfermedad?')) {
-            fetch('/api/enfermedades/' + id, {
-                method: 'DELETE'
-            }).then(response => {
-                if (response.ok) {
-                    location.reload();
-                }
-            });
-        }
     }
 
     function desactivarEnfermedad(id) {

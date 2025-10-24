@@ -31,7 +31,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         // ✅ RUTAS PÚBLICAS DEL FRONTEND
-                        .requestMatchers("/", "/css/**", "/js/**", "/images/**").permitAll()
+                        .requestMatchers("/", "/login", "/css/**", "/js/**", "/images/**").permitAll()
 
                         // ✅ SWAGGER / OPENAPI
                         .requestMatchers(
@@ -47,8 +47,15 @@ public class SecurityConfig {
                                 "/api/auth/**"
                         ).permitAll()
 
-                        // ✅ RUTAS DE ADMINISTRACIÓN (requieren login)
-                        .requestMatchers("/admin/**").authenticated()
+                        // ✅ RUTAS DE ADMINISTRACIÓN POR ROL
+                        // Enfermedades: ADMIN y LAB
+                        .requestMatchers("/admin/enfermedades", "/admin/enfermedades/**").hasAnyRole("ADMIN", "LAB")
+                        // Reportes: ADMIN y LAB
+                        .requestMatchers("/admin/reportes", "/admin/reportes/**").hasAnyRole("ADMIN", "LAB")
+                        // Laboratorios: solo ADMIN
+                        .requestMatchers("/admin/laboratorios", "/admin/laboratorios/**").hasRole("ADMIN")
+                        // Dashboard: ADMIN y LAB
+                        .requestMatchers("/admin/dashboard").hasAnyRole("ADMIN", "LAB")
 
                         // ✅ API protegida según roles
                         .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
@@ -79,7 +86,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
                 )
-                // ✅ SOLO aplicar JWT filter para rutas de API
+                // ✅ Solo aplicar JWT filter para rutas de API
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

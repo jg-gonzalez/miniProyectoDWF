@@ -191,7 +191,6 @@ public class ViewController {
     }
 
     // ======================== MÉTODOS POST ========================
-    // (Se mantiene exactamente igual que en tu código anterior)
     // Crear Reporte
     @PostMapping("/admin/reportes")
     public String crearReporte(@RequestParam Long enfermedadId,
@@ -237,7 +236,7 @@ public class ViewController {
         }
     }
 
-    // Crear Enfermedad
+    // Crear Enfermedad - ADMIN o LAB
     @PostMapping("/admin/enfermedades")
     public String crearEnfermedad(@RequestParam String nombre,
                                   @RequestParam String codigo,
@@ -251,7 +250,18 @@ public class ViewController {
             return "redirect:/login";
         }
 
+        boolean isAdminOrLab = authentication.getAuthorities().stream()
+                .anyMatch(grantedAuthority ->
+                        grantedAuthority.getAuthority().equals("ROLE_ADMIN") ||
+                                grantedAuthority.getAuthority().equals("ROLE_LAB"));
+
+        if (!isAdminOrLab) {
+            return "redirect:/admin/dashboard";
+        }
+
         try {
+            System.out.println("🦠 Creando nueva enfermedad: " + nombre);
+
             Enfermedad enfermedad = Enfermedad.builder()
                     .nombre(nombre)
                     .codigo(codigo)
@@ -264,8 +274,11 @@ public class ViewController {
 
             enfermedadService.createEnfermedad(enfermedad);
 
+            System.out.println("✅ Enfermedad creada exitosamente por: " + authentication.getName());
+
             return "redirect:/admin/enfermedades?success=true";
         } catch (Exception e) {
+            System.out.println("❌ Error creando enfermedad: " + e.getMessage());
             return "redirect:/admin/enfermedades?error=true";
         }
     }
@@ -329,6 +342,13 @@ public class ViewController {
             return "redirect:/login";
         }
 
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_ADMIN"));
+
+        if (!isAdmin) {
+            return "redirect:/admin/enfermedades?error=permisos";
+        }
+
         try {
             enfermedadService.deleteEnfermedad(id);
             return "redirect:/admin/enfermedades?success=eliminado";
@@ -341,6 +361,13 @@ public class ViewController {
     public String eliminarLaboratorio(@PathVariable Long id, Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return "redirect:/login";
+        }
+
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_ADMIN"));
+
+        if (!isAdmin) {
+            return "redirect:/admin/laboratorios?error=permisos";
         }
 
         try {
