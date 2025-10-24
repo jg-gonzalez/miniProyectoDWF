@@ -30,28 +30,56 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // Permite acceso público a Swagger/OpenAPI
+                        // ✅ RUTAS PÚBLICAS DEL FRONTEND
+                        .requestMatchers("/", "/css/**", "/js/**", "/images/**").permitAll()
+
+                        // ✅ SWAGGER / OPENAPI
                         .requestMatchers(
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/api-docs/**",
-                                "/swagger-resources/**",
-                                "/webjars/**"
+                                "/swagger-ui.html", "/swagger-ui/**",
+                                "/v3/api-docs/**", "/api-docs/**",
+                                "/swagger-resources/**", "/webjars/**"
                         ).permitAll()
 
-                        // Permite acceso público a endpoints de autenticación
-                        .requestMatchers("/api/auth/**").permitAll()
+                        // ✅ API PÚBLICA (solo lectura)
+                        .requestMatchers(
+                                "/api/enfermedades/activas",
+                                "/api/dashboard/**",
+                                "/api/auth/**"
+                        ).permitAll()
 
-                        // Endpoints que requieren roles específicos
-                        .requestMatchers("/api/usuarios").hasAuthority("ROLE_ADMIN")
+                        // ✅ RUTAS DE ADMINISTRACIÓN (requieren login)
+                        .requestMatchers("/admin/**").authenticated()
 
-                        // Todos los demás endpoints requieren autenticación
+                        // ✅ API protegida según roles
+                        .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
+                        .requestMatchers("/api/laboratorios/**").hasRole("ADMIN")
+                        .requestMatchers("/api/enfermedades/**").hasAnyRole("ADMIN", "LAB")
+                        .requestMatchers("/api/reportes/**").hasAnyRole("ADMIN", "LAB")
+
+                        // ✅ Cualquier otra ruta requiere autenticación
                         .anyRequest().authenticated()
                 )
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                // Login tradicional con formulario
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .loginProcessingUrl("/login")
+                        .defaultSuccessUrl("/admin/dashboard", true)
+                        .failureUrl("/login?error=true")
+                        .permitAll()
                 )
+                // Logout
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
+                        .permitAll()
+                )
+                // Política de sesión
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
+                )
+                // ✅ SOLO aplicar JWT filter para rutas de API
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

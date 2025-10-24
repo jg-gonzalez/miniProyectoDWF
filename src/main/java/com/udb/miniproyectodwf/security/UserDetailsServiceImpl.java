@@ -20,16 +20,15 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
 
-        // REMUEVE el "ROLE_" si ya lo tiene
         String role = usuario.getRole();
         if (role != null && role.startsWith("ROLE_")) {
-            role = role.substring(5); // Remueve "ROLE_"
+            role = role.substring(5); // Spring Security agregará automáticamente "ROLE_"
         }
 
         return User.builder()
                 .username(usuario.getUsername())
                 .password(usuario.getPassword())
-                .roles(role) // Spring agregará automáticamente "ROLE_"
+                .roles(role)
                 .build();
     }
 }

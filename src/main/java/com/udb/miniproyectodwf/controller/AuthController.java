@@ -1,13 +1,16 @@
 package com.udb.miniproyectodwf.controller;
 
 import com.udb.miniproyectodwf.entity.Usuario;
-import com.udb.miniproyectodwf.security.JwtUtil;
 import com.udb.miniproyectodwf.service.UsuarioService;
+import com.udb.miniproyectodwf.security.JwtUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -15,92 +18,70 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "1. Autenticación", description = "Login y registro de usuarios")
 public class AuthController {
 
-    private final UsuarioService usuarioService;
-    private final JwtUtil jwtUtil;
-    private final PasswordEncoder passwordEncoder;
-
-    // INYECCIÓN POR CONSTRUCTOR (MEJOR PRÁCTICA)
     @Autowired
-    public AuthController(UsuarioService usuarioService, JwtUtil jwtUtil, PasswordEncoder passwordEncoder) {
-        this.usuarioService = usuarioService;
-        this.jwtUtil = jwtUtil;
-        this.passwordEncoder = passwordEncoder;
-    }
+    private UsuarioService usuarioService;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Operation(summary = "Login de usuario")
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> userMap) {
-        try {
-            String username = userMap.get("username");
-            String password = userMap.get("password");
+    public Map<String, String> login(@RequestBody Map<String, String> userMap) {
+        String username = userMap.get("username");
+        String password = userMap.get("password");
 
-            if (username == null || password == null) {
-                return ResponseEntity.badRequest().body("Username y password son requeridos");
-            }
-
-            var userOpt = usuarioService.getUsuarioByUsername(username);
-            if (userOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
-            }
-
-            Usuario user = userOpt.get();
-            if (!passwordEncoder.matches(password, user.getPassword())) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Contraseña incorrecta");
-            }
-
-            String token = jwtUtil.generateToken(username);
-            Map<String, String> response = new HashMap<>();
-            response.put("token", token);
-            response.put("username", username);
-            response.put("role", user.getRole());
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error en el servidor: " + e.getMessage());
+        // Validar que vengan los datos
+        if (username == null || password == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username y password son requeridos");
         }
+
+        // Buscar usuario
+        Usuario usuario = usuarioService.getUsuarioByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado"));
+
+        // Validar password
+        if (!passwordEncoder.matches(password, usuario.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Contraseña incorrecta");
+        }
+
+        // Generar token
+        String token = jwtUtil.generateToken(username);
+
+        // ✅ CORREGIDO: Especificar tipos en el HashMap
+        Map<String, String> response = new HashMap<String, String>();
+        response.put("token", token);
+        response.put("username", username);
+        response.put("role", usuario.getRole());
+
+        return response; // Spring convierte automáticamente a JSON
     }
 
+    @Operation(summary = "Registrar nuevo usuario")
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody Usuario usuario) {
-        try {
-            if (usuarioService.getUsuarioByUsername(usuario.getUsername()).isPresent()) {
-                return ResponseEntity.badRequest().body("El usuario ya existe");
-            }
-
-            if (usuario.getUsername() == null || usuario.getPassword() == null || usuario.getRole() == null) {
-                return ResponseEntity.badRequest().body("Todos los campos son requeridos");
-            }
-
-            usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
-            Usuario created = usuarioService.createUsuario(usuario);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "Usuario registrado exitosamente");
-            response.put("usuario", created);
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error al registrar usuario: " + e.getMessage());
+    public Usuario register(@RequestBody Usuario usuario) {
+        // Validar campos
+        if (usuario.getUsername() == null || usuario.getPassword() == null || usuario.getRole() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Todos los campos son requeridos");
         }
+
+        // Verificar si ya existe
+        if (usuarioService.getUsuarioByUsername(usuario.getUsername()).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El usuario ya existe");
+        }
+
+        return usuarioService.createUsuario(usuario); // Devuelve el objeto directamente
     }
 
-    @GetMapping("/debug-users")
-    public ResponseEntity<?> debugUsers() {
-        try {
-            List<Usuario> usuarios = usuarioService.getAllUsuarios();
-            Map<String, Object> response = new HashMap<>();
-            response.put("total_users", usuarios.size());
-            response.put("users", usuarios);
-            response.put("message", usuarios.isEmpty() ? "NO HAY USUARIOS EN LA BD" : "Usuarios encontrados");
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error al obtener usuarios: " + e.getMessage());
-        }
+    @Operation(summary = "Listar todos los usuarios (Solo ADMIN)")
+    @GetMapping("/usuarios")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<Usuario> getAllUsuarios() {
+        return usuarioService.getAllUsuarios(); // Directo, sin ResponseEntity
     }
 }

@@ -1,8 +1,10 @@
 package com.udb.miniproyectodwf.entity;
+
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.List;
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "laboratorios")
 @Getter
@@ -11,6 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class Laboratorio {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -20,10 +23,12 @@ public class Laboratorio {
 
     private String direccion;
     private String telefono;
+    private String email;
 
-    @OneToOne
-    private Usuario usuario;
+    @Builder.Default
+    private Boolean activo = true;
 
-    @OneToMany(mappedBy = "laboratorio")
-    private List<Reporte> reportes;
+    @Builder.Default
+    @Column(name = "fecha_creacion")
+    private LocalDateTime fechaCreacion = LocalDateTime.now();
 }

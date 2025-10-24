@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Enfermedades - Sistema Epidemiológico</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="/dashboard">
+            <i class="fas fa-shield-virus"></i> Sistema Epidemiológico
+        </a>
+        <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">
+                    <i class="fas fa-user"></i>
+                    <span th:text="${username}"></span>
+                    (<span th:text="${role}"></span>)
+                </span>
+            <a class="nav-link" href="/logout">
+                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- En el sidebar de enfermedades.html -->
+        <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/dashboard">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/reportes">
+                            <i class="fas fa-file-medical"></i> Reportes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/admin/enfermedades">
+                            <i class="fas fa-virus"></i> Enfermedades
+                        </a>
+                    </li>
+                    <li class="nav-item" th:if="${role == 'ROLE_ADMIN'}">
+                        <a class="nav-link" href="/admin/laboratorios">
+                            <i class="fas fa-microscope"></i> Laboratorios
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Contenido Principal -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2"><i class="fas fa-virus"></i> Catálogo de Enfermedades</h1>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nuevaEnfermedadModal"
+                        th:if="${role == 'ROLE_ADMIN'}">
+                    <i class="fas fa-plus"></i> Nueva Enfermedad
+                </button>
+            </div>
+
+            <!-- Lista de Enfermedades -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Enfermedades Registradas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Código</th>
+                                <th>Descripción</th>
+                                <th>Síntomas</th>
+                                <th>Estado</th>
+                                <th th:if="${role == 'ROLE_ADMIN'}">Acciones</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="enfermedad : ${enfermedades}">
+                                <td th:text="${enfermedad.id}"></td>
+                                <td>
+                                    <strong th:text="${enfermedad.nombre}"></strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary" th:text="${enfermedad.codigo}"></span>
+                                </td>
+                                <td th:text="${enfermedad.descripcion} ?: 'Sin descripción'"></td>
+                                <td th:text="${enfermedad.sintomas} ?: 'No especificado'"></td>
+                                <td>
+                                    <span th:if="${enfermedad.activa}" class="badge bg-success">Activa</span>
+                                    <span th:if="${!enfermedad.activa}" class="badge bg-danger">Inactiva</span>
+                                </td>
+                                <td th:if="${role == 'ROLE_ADMIN'}">
+                                    <button class="btn btn-sm btn-outline-primary"
+                                            th:onclick="|editarEnfermedad(${enfermedad.id})|">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger"
+                                            th:onclick="|eliminarEnfermedad(${enfermedad.id})|">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    <button th:if="${enfermedad.activa}"
+                                            class="btn btn-sm btn-outline-warning"
+                                            th:onclick="|desactivarEnfermedad(${enfermedad.id})|">
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                    <button th:if="${!enfermedad.activa}"
+                                            class="btn btn-sm btn-outline-success"
+                                            th:onclick="|activarEnfermedad(${enfermedad.id})|">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr th:if="${enfermedades.empty}">
+                                <td colspan="7" class="text-center text-muted">
+                                    No hay enfermedades registradas
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Modal Nueva Enfermedad (Solo ADMIN) -->
+<div class="modal fade" id="nuevaEnfermedadModal" tabindex="-1" th:if="${role == 'ROLE_ADMIN'}">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nueva Enfermedad</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/admin/enfermedades" method="post">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Nombre *</label>
+                                <input type="text" class="form-control" name="nombre"
+                                       placeholder="Ej: Dengue" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Código *</label>
+                                <input type="text" class="form-control" name="codigo"
+                                       placeholder="Ej: A90" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" name="descripcion" rows="2"
+                                  placeholder="Descripción de la enfermedad..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Síntomas</label>
+                        <textarea class="form-control" name="sintomas" rows="2"
+                                  placeholder="Síntomas principales..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Tratamiento</label>
+                        <textarea class="form-control" name="tratamiento" rows="2"
+                                  placeholder="Recomendaciones de tratamiento..."></textarea>
+                    </div>
+
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="activa" checked>
+                        <label class="form-check-label">Enfermedad activa</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Enfermedad</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function editarEnfermedad(id) {
+        alert('Editar enfermedad: ' + id);
+        // Implementar edición
+    }
+
+    function eliminarEnfermedad(id) {
+        if (confirm('¿Está seguro de eliminar esta enfermedad?')) {
+            fetch('/api/enfermedades/' + id, {
+                method: 'DELETE'
+            }).then(response => {
+                if (response.ok) {
+                    location.reload();
+                }
+            });
+        }
+    }
+
+    function desactivarEnfermedad(id) {
+        if (confirm('¿Desactivar esta enfermedad?')) {
+            // Implementar desactivación
+            alert('Enfermedad desactivada: ' + id);
+        }
+    }
+
+    function activarEnfermedad(id) {
+        // Implementar activación
+        alert('Enfermedad activada: ' + id);
+    }
+</script>
+</body>
+</html>

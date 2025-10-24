@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - MINED</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #mapa { height: 600px; width: 100%; }
+        footer { background-color: #f8f9fa; padding: 10px 0; text-align: center; margin-top: 20px; }
+        .stat-card i { font-size: 28px; opacity: .8; }
+        .tooltip-circle {
+            background: transparent;
+            border: none;
+            color: black;
+            font-weight: bold;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ✅ Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="#">MINED</a>
+        <div class="ms-auto">
+            <a class="btn btn-outline-light" href="/login">Iniciar Sesión</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+
+    <!-- ✅ Estadísticas del Dashboard (datos simulados) -->
+    <div class="row text-white mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-center stat-card">
+                <div class="card-body">
+                    <i class="fas fa-file-medical"></i>
+                    <h5>Total Reportes</h5>
+                    <h2 id="statTotalReportes">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-center stat-card">
+                <div class="card-body">
+                    <i class="fas fa-users"></i>
+                    <h5>Total Casos</h5>
+                    <h2 id="statTotalCasos">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-center stat-card">
+                <div class="card-body">
+                    <i class="fas fa-clock"></i>
+                    <h5>Pendientes</h5>
+                    <h2 id="statPendientes">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-center stat-card">
+                <div class="card-body">
+                    <i class="fas fa-check-circle"></i>
+                    <h5>Verificados</h5>
+                    <h2 id="statVerificados">0</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ Mapa Interactivo -->
+    <h3 class="text-center mb-3 fw-bold">Mapa de Monitoreo Poblacional</h3>
+    <div id="mapa"></div>
+</div>
+
+<!-- ✅ Footer -->
+<footer>
+    &copy; 2025 MINED - Sistema de Monitoreo para la Población
+</footer>
+
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+    // ✅ Datos simulados de departamentos (SIN backend)
+    const datos = [
+        {nombre:"Ahuachapán", lat:13.92, lng:-89.85, casos:3},
+        {nombre:"Santa Ana", lat:13.99, lng:-89.56, casos:4},
+        {nombre:"Sonsonate", lat:13.71, lng:-89.72, casos:2},
+        {nombre:"Chalatenango", lat:14.07, lng:-88.94, casos:2},
+        {nombre:"La Libertad", lat:13.67, lng:-89.18, casos:5},
+        {nombre:"San Salvador", lat:13.69, lng:-89.19, casos:9},
+        {nombre:"Cuscatlán", lat:13.72, lng:-88.93, casos:1},
+        {nombre:"La Paz", lat:13.50, lng:-88.87, casos:2},
+        {nombre:"Cabañas", lat:13.90, lng:-88.75, casos:1},
+        {nombre:"San Vicente", lat:13.63, lng:-88.80, casos:0},
+        {nombre:"Usulután", lat:13.36, lng:-88.44, casos:4},
+        {nombre:"San Miguel", lat:13.48, lng:-88.17, casos:7},
+        {nombre:"Morazán", lat:13.78, lng:-88.12, casos:1},
+        {nombre:"La Unión", lat:13.34, lng:-87.84, casos:3}
+    ];
+
+    // ✅ Actualizar estadísticas arriba (mock)
+    document.getElementById("statTotalReportes").innerText = datos.length * 2;
+    document.getElementById("statTotalCasos").innerText = datos.reduce((a,b)=>a+b.casos,0);
+    document.getElementById("statPendientes").innerText = 3;
+    document.getElementById("statVerificados").innerText = 7;
+
+    // ✅ Configurar mapa Leaflet
+    var map = L.map('mapa').setView([13.7, -88.8], 8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(map);
+
+    // ✅ Agregar marcadores con casos
+    datos.forEach(dep => {
+        var marker = L.circleMarker([dep.lat, dep.lng], {
+            radius: 10 + dep.casos,
+            color: dep.casos > 5 ? 'red' : 'orange',
+            fillColor: dep.casos > 5 ? '#ff4444' : '#ffa500',
+            fillOpacity: 0.6
+        }).addTo(map);
+
+        marker.bindPopup(`<b>${dep.nombre}</b><br>Casos: ${dep.casos}`);
+        marker.bindTooltip(dep.casos.toString(), { permanent: true, direction: "center", className: "tooltip-circle" }).openTooltip();
+    });
+</script>
+
+</body>
+</html>

@@ -2,26 +2,29 @@ package com.udb.miniproyectodwf.controller;
 
 import com.udb.miniproyectodwf.entity.Departamento;
 import com.udb.miniproyectodwf.service.DepartamentoService;
-import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/departamentos")
+@CrossOrigin(origins = "*")
 public class DepartamentoController {
 
-    private final DepartamentoService departamentoService;
-
-    public DepartamentoController(DepartamentoService departamentoService) {
-        this.departamentoService = departamentoService;
-    }
+    @Autowired
+    private DepartamentoService departamentoService;
 
     @GetMapping
     public ResponseEntity<List<Departamento>> getAllDepartamentos() {
         return ResponseEntity.ok(departamentoService.getAllDepartamentos());
+    }
+
+    @GetMapping("/activos")
+    public ResponseEntity<List<Departamento>> getDepartamentosActivos() {
+        return ResponseEntity.ok(departamentoService.getDepartamentosActivos());
     }
 
     @GetMapping("/{id}")
@@ -32,19 +35,13 @@ public class DepartamentoController {
     }
 
     @PostMapping
-    public ResponseEntity<Departamento> createDepartamento(@Valid @RequestBody Departamento departamento) {
-        Departamento created = departamentoService.createDepartamento(departamento);
-        return new ResponseEntity<>(created, HttpStatus.CREATED);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Departamento> updateDepartamento(@PathVariable Long id,
-                                                           @Valid @RequestBody Departamento departamento) {
-        Departamento updated = departamentoService.updateDepartamento(id, departamento);
-        return ResponseEntity.ok(updated);
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Departamento> createDepartamento(@RequestBody Departamento departamento) {
+        return ResponseEntity.ok(departamentoService.createDepartamento(departamento));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteDepartamento(@PathVariable Long id) {
         departamentoService.deleteDepartamento(id);
         return ResponseEntity.noContent().build();

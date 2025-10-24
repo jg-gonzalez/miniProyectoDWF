@@ -3,9 +3,11 @@ package com.udb.miniproyectodwf.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import javax.crypto.SecretKey;
 import java.util.Date;
 
 @Component
@@ -15,27 +17,29 @@ public class JwtUtil {
     private String secret;
 
     @Value("${jwt.expiration}")
-    private long expiration; // en milisegundos
+    private long expiration;
 
-    // Generar token CON FECHAS CORRECTAS
+    // ✅ CORREGIDO: Usar Keys para generar la clave secreta
+    private SecretKey getSigningKey() {
+        return Keys.hmacShaKeyFor(secret.getBytes());
+    }
+
+    // ✅ CORREGIDO: Método actualizado sin deprecación
     public String generateToken(String username) {
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + expiration);
-
         return Jwts.builder()
                 .setSubject(username)
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .signWith(SignatureAlgorithm.HS256, secret)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    // Extraer username del token
+    // ✅ CORREGIDO: Método actualizado sin deprecación
     public String extractUsername(String token) {
         return getClaims(token).getSubject();
     }
 
-    // Validar token
+    // ✅ CORREGIDO: Método actualizado sin deprecación
     public boolean validateToken(String token, String username) {
         return username.equals(extractUsername(token)) && !isTokenExpired(token);
     }
@@ -44,9 +48,11 @@ public class JwtUtil {
         return getClaims(token).getExpiration().before(new Date());
     }
 
+    // ✅ CORREGIDO: Método actualizado sin deprecación
     private Claims getClaims(String token) {
-        return Jwts.parser()
-                .setSigningKey(secret)
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
                 .parseClaimsJws(token)
                 .getBody();
     }

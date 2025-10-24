@@ -2,6 +2,7 @@ package com.udb.miniproyectodwf.controller;
 
 import com.udb.miniproyectodwf.entity.Usuario;
 import com.udb.miniproyectodwf.service.UsuarioService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,7 @@ public class UsuarioController {
 
     private final UsuarioService usuarioService;
 
+    @Autowired // ← Agregar esta anotación
     public UsuarioController(UsuarioService usuarioService) {
         this.usuarioService = usuarioService;
     }
