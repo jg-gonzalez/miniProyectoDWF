@@ -88,8 +88,9 @@
                                 <th>Enfermedad</th>
                                 <th>Departamento</th>
                                 <th>Municipio</th>
+                                <th>Laboratorio</th>
                                 <th>Casos</th>
-                                <th>Fecha</th>
+                                <th>Fecha Detección</th>
                                 <th>Estado</th>
                                 <th>Acciones</th>
                             </tr>
@@ -100,6 +101,7 @@
                                 <td th:text="${reporte.enfermedad.nombre}"></td>
                                 <td th:text="${reporte.departamento.nombre}"></td>
                                 <td th:text="${reporte.municipio.nombre}"></td>
+                                <td th:text="${reporte.laboratorio.nombre}"></td>
                                 <td>
                                     <span class="badge bg-primary" th:text="${reporte.cantidadCasos}"></span>
                                 </td>
@@ -120,7 +122,8 @@
                                 </td>
                             </tr>
                             <tr th:if="${reportes.empty}">
-                                <td colspan="8" class="text-center text-muted">
+                                <td colspan="9" class="text-center text-muted">
+                                    <i class="fas fa-inbox fa-2x mb-2"></i><br>
                                     No hay reportes registrados
                                 </td>
                             </tr>
@@ -142,77 +145,114 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form action="/admin/reportes" method="post">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label">Enfermedad *</label>
-                            <select class="form-select" name="enfermedadId" required>
-                                <option value="">Seleccionar enfermedad</option>
-                                <option th:each="enfermedad : ${enfermedades}"
-                                        th:value="${enfermedad.id}"
-                                        th:text="${enfermedad.nombre}">
-                                </option>
-                            </select>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Enfermedad *</label>
+                                <select class="form-select" name="enfermedadId" required>
+                                    <option value="">Seleccionar enfermedad</option>
+                                    <option th:each="enfermedad : ${enfermedades}"
+                                            th:value="${enfermedad.id}"
+                                            th:text="${enfermedad.nombre}">
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Laboratorio *</label>
+                                <select class="form-select" name="laboratorioId" required>
+                                    <option value="">Seleccionar laboratorio</option>
+                                    <option th:each="laboratorio : ${laboratorios}"
+                                            th:value="${laboratorio.id}"
+                                            th:text="${laboratorio.nombre}">
+                                    </option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label">Laboratorio *</label>
-                            <select class="form-select" name="laboratorioId" required>
-                                <option value="">Seleccionar laboratorio</option>
-                                <option th:each="laboratorio : ${laboratorios}"
-                                        th:value="${laboratorio.id}"
-                                        th:text="${laboratorio.nombre}">
-                                </option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label">Departamento *</label>
-                            <input type="text" class="form-control" name="departamento"
-                                   placeholder="Ej: San Salvador" required>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Departamento *</label>
+                                <select class="form-select" name="departamento" required>
+                                    <option value="">Seleccionar departamento</option>
+                                    <option value="Ahuachapán">Ahuachapán</option>
+                                    <option value="Cabañas">Cabañas</option>
+                                    <option value="Chalatenango">Chalatenango</option>
+                                    <option value="Cuscatlán">Cuscatlán</option>
+                                    <option value="La Libertad">La Libertad</option>
+                                    <option value="La Paz">La Paz</option>
+                                    <option value="La Unión">La Unión</option>
+                                    <option value="Morazán">Morazán</option>
+                                    <option value="San Miguel">San Miguel</option>
+                                    <option value="San Salvador">San Salvador</option>
+                                    <option value="San Vicente">San Vicente</option>
+                                    <option value="Santa Ana">Santa Ana</option>
+                                    <option value="Sonsonate">Sonsonate</option>
+                                    <option value="Usulután">Usulután</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Municipio *</label>
+                                <input type="text" class="form-control" name="municipio"
+                                       placeholder="Ej: San Salvador, Santa Tecla, Soyapango..." required>
+                                <div class="form-text">Ingrese el nombre del municipio</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label">Municipio *</label>
-                            <input type="text" class="form-control" name="municipio"
-                                   placeholder="Ej: San Salvador" required>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label">Cantidad de Casos *</label>
-                            <input type="number" class="form-control" name="cantidadCasos"
-                                   min="1" value="1" required>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Cantidad de Casos *</label>
+                                <input type="number" class="form-control" name="cantidadCasos"
+                                       min="1" value="1" required>
+                                <div class="form-text">Mínimo 1 caso</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Fecha de Detección *</label>
+                                <input type="date" class="form-control" name="fechaDeteccion" required>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label">Fecha de Detección *</label>
-                            <input type="date" class="form-control" name="fechaDeteccion" required>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Observaciones</label>
-                    <textarea class="form-control" name="observaciones" rows="3"
-                              placeholder="Observaciones adicionales..."></textarea>
+                    <div class="mb-3">
+                        <label class="form-label">Observaciones</label>
+                        <textarea class="form-control" name="observaciones" rows="3"
+                                  placeholder="Observaciones adicionales, síntomas particulares, etc."></textarea>
+                        <div class="form-text">Opcional</div>
+                    </div>
                 </div>
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar Reporte</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar Reporte
+                    </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Reporte (placeholder) -->
+<div class="modal fade" id="editarReporteModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar Reporte</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-center text-muted">Funcionalidad de edición en desarrollo...</p>
+            </div>
         </div>
     </div>
 </div>
@@ -220,18 +260,28 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     function editarReporte(id) {
-        alert('Editar reporte: ' + id);
-        // Aquí implementarías la edición
+        alert('Funcionalidad de edición para el reporte ' + id + ' estará disponible pronto.');
+        // Para implementar en el futuro:
+        // const modal = new bootstrap.Modal(document.getElementById('editarReporteModal'));
+        // modal.show();
     }
 
     function eliminarReporte(id) {
-        if (confirm('¿Está seguro de eliminar este reporte?')) {
+        if (confirm('¿Está seguro de eliminar este reporte?\nEsta acción no se puede deshacer.')) {
             fetch('/api/reportes/' + id, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
             }).then(response => {
                 if (response.ok) {
                     location.reload();
+                } else {
+                    alert('Error al eliminar el reporte');
                 }
+            }).catch(error => {
+                console.error('Error:', error);
+                alert('Error al eliminar el reporte');
             });
         }
     }
@@ -239,8 +289,97 @@
     // Establecer fecha actual por defecto
     document.addEventListener('DOMContentLoaded', function() {
         const today = new Date().toISOString().split('T')[0];
-        document.querySelector('input[name="fechaDeteccion"]').value = today;
+        const fechaInput = document.querySelector('input[name="fechaDeteccion"]');
+        if (fechaInput) {
+            fechaInput.value = today;
+        }
+
+        // Agregar validación adicional
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const cantidadCasos = document.querySelector('input[name="cantidadCasos"]').value;
+                if (cantidadCasos < 1) {
+                    e.preventDefault();
+                    alert('La cantidad de casos debe ser al menos 1');
+                    return false;
+                }
+
+                const departamento = document.querySelector('select[name="departamento"]').value;
+                const municipio = document.querySelector('input[name="municipio"]').value;
+
+                if (!departamento.trim() || !municipio.trim()) {
+                    e.preventDefault();
+                    alert('Por favor complete todos los campos obligatorios');
+                    return false;
+                }
+
+                // Mostrar mensaje de carga
+                const submitBtn = form.querySelector('button[type="submit"]');
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+                submitBtn.disabled = true;
+            });
+        }
+    });
+
+    // Mejorar la experiencia del usuario
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-enfoque en el primer campo del modal cuando se abre
+        const reporteModal = document.getElementById('nuevoReporteModal');
+        if (reporteModal) {
+            reporteModal.addEventListener('shown.bs.modal', function () {
+                document.querySelector('select[name="enfermedadId"]').focus();
+            });
+        }
+
+        // Limpiar formulario cuando se cierre el modal
+        reporteModal.addEventListener('hidden.bs.modal', function () {
+            const form = this.querySelector('form');
+            if (form) {
+                form.reset();
+                // Restablecer fecha actual
+                const today = new Date().toISOString().split('T')[0];
+                document.querySelector('input[name="fechaDeteccion"]').value = today;
+            }
+        });
     });
 </script>
+
+<style>
+    .sidebar {
+        min-height: calc(100vh - 56px);
+        box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+    }
+
+    .sidebar .nav-link {
+        color: #333;
+        padding: 0.75rem 1rem;
+        border-radius: 0.375rem;
+        margin: 0.125rem 0.5rem;
+    }
+
+    .sidebar .nav-link.active {
+        color: #fff;
+        background-color: #0d6efd;
+    }
+
+    .sidebar .nav-link:hover:not(.active) {
+        background-color: #f8f9fa;
+    }
+
+    .table th {
+        border-top: none;
+        font-weight: 600;
+    }
+
+    .badge {
+        font-size: 0.75em;
+    }
+
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+</style>
 </body>
 </html>

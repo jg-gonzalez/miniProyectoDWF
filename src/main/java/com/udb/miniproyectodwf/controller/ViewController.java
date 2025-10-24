@@ -8,6 +8,8 @@ import com.udb.miniproyectodwf.entity.Municipio;
 import com.udb.miniproyectodwf.service.EnfermedadService;
 import com.udb.miniproyectodwf.service.LaboratorioService;
 import com.udb.miniproyectodwf.service.ReporteService;
+import com.udb.miniproyectodwf.service.DepartamentoService;
+import com.udb.miniproyectodwf.service.MunicipioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.Authentication;
@@ -31,6 +33,12 @@ public class ViewController {
 
     @Autowired
     private LaboratorioService laboratorioService;
+
+    @Autowired
+    private DepartamentoService departamentoService;
+
+    @Autowired
+    private MunicipioService municipioService;
 
     // ======================== DASHBOARD PÚBLICO ========================
     @GetMapping("/")
@@ -113,14 +121,17 @@ public class ViewController {
             List<Reporte> reportes = reporteService.getAllReportes();
             List<Enfermedad> enfermedades = enfermedadService.getEnfermedadesActivas();
             List<Laboratorio> laboratorios = laboratorioService.getLaboratoriosActivos();
+            List<Departamento> departamentos = departamentoService.getDepartamentosActivos();
 
             System.out.println("📊 Reportes encontrados: " + reportes.size());
             System.out.println("🦠 Enfermedades encontradas: " + enfermedades.size());
             System.out.println("🔬 Laboratorios encontrados: " + laboratorios.size());
+            System.out.println("🏢 Departamentos encontrados: " + departamentos.size());
 
             model.addAttribute("reportes", reportes);
             model.addAttribute("enfermedades", enfermedades);
             model.addAttribute("laboratorios", laboratorios);
+            model.addAttribute("departamentos", departamentos);
             model.addAttribute("username", authentication.getName());
             model.addAttribute("role", authentication.getAuthorities().iterator().next().getAuthority());
 
@@ -191,7 +202,7 @@ public class ViewController {
     }
 
     // ======================== MÉTODOS POST ========================
-    // Crear Reporte
+    // Crear Reporte - CORREGIDO
     @PostMapping("/admin/reportes")
     public String crearReporte(@RequestParam Long enfermedadId,
                                @RequestParam Long laboratorioId,
@@ -207,31 +218,26 @@ public class ViewController {
         }
 
         try {
-            Enfermedad enfermedad = enfermedadService.getEnfermedadById(enfermedadId)
-                    .orElseThrow(() -> new RuntimeException("Enfermedad no encontrada"));
+            System.out.println("🆕 Creando nuevo reporte...");
+            System.out.println("📋 Datos recibidos:");
+            System.out.println("   Enfermedad ID: " + enfermedadId);
+            System.out.println("   Laboratorio ID: " + laboratorioId);
+            System.out.println("   Departamento: " + departamento);
+            System.out.println("   Municipio: " + municipio);
+            System.out.println("   Casos: " + cantidadCasos);
+            System.out.println("   Fecha: " + fechaDeteccion);
 
-            Laboratorio laboratorio = laboratorioService.getLaboratorioById(laboratorioId)
-                    .orElseThrow(() -> new RuntimeException("Laboratorio no encontrado"));
+            // Usar el nuevo método del servicio
+            Reporte reporteGuardado = reporteService.crearReporteConNombres(
+                    enfermedadId, laboratorioId, departamento, municipio,
+                    cantidadCasos, fechaDeteccion, observaciones
+            );
 
-            Departamento depto = Departamento.builder().nombre(departamento).build();
-            Municipio muni = Municipio.builder().nombre(municipio).departamento(depto).build();
-
-            Reporte reporte = Reporte.builder()
-                    .enfermedad(enfermedad)
-                    .laboratorio(laboratorio)
-                    .departamento(depto)
-                    .municipio(muni)
-                    .cantidadCasos(cantidadCasos)
-                    .fechaDeteccion(fechaDeteccion)
-                    .observaciones(observaciones)
-                    .estado("PENDIENTE")
-                    .fechaReporte(LocalDateTime.now())
-                    .build();
-
-            reporteService.createReporte(reporte);
-
+            System.out.println("✅ Reporte creado exitosamente con ID: " + reporteGuardado.getId());
             return "redirect:/admin/reportes?success=true";
         } catch (Exception e) {
+            System.out.println("❌ Error creando reporte: " + e.getMessage());
+            e.printStackTrace();
             return "redirect:/admin/reportes?error=true";
         }
     }

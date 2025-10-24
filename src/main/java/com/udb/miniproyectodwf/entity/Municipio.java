@@ -11,6 +11,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class Municipio {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -18,10 +19,16 @@ public class Municipio {
     @Column(nullable = false)
     private String nombre;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "departamento_id", nullable = false)
     private Departamento departamento;
 
     @Builder.Default
     private Boolean activo = true;
+
+    public Municipio(String nombre, Departamento departamento) {
+        this.nombre = nombre;
+        this.departamento = departamento;
+        this.activo = true;
+    }
 }

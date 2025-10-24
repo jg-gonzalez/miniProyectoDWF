@@ -1,9 +1,10 @@
 package com.udb.miniproyectodwf.service;
 
-import com.udb.miniproyectodwf.entity.Reporte;
-import com.udb.miniproyectodwf.repository.ReporteRepository;
+import com.udb.miniproyectodwf.entity.*;
+import com.udb.miniproyectodwf.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -11,10 +12,23 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class ReporteService {
 
     @Autowired
     private ReporteRepository reporteRepository;
+
+    @Autowired
+    private DepartamentoRepository departamentoRepository;
+
+    @Autowired
+    private MunicipioRepository municipioRepository;
+
+    @Autowired
+    private EnfermedadRepository enfermedadRepository;
+
+    @Autowired
+    private LaboratorioRepository laboratorioRepository;
 
     public List<Reporte> getAllReportes() {
         return reporteRepository.findAll();
@@ -25,13 +39,79 @@ public class ReporteService {
     }
 
     public Reporte createReporte(Reporte reporte) {
+        // Validar y cargar todas las entidades relacionadas
+        if (reporte.getDepartamento() != null && reporte.getDepartamento().getId() != null) {
+            Departamento departamento = departamentoRepository.findById(reporte.getDepartamento().getId())
+                    .orElseThrow(() -> new RuntimeException("Departamento no encontrado"));
+            reporte.setDepartamento(departamento);
+        }
+
+        if (reporte.getMunicipio() != null && reporte.getMunicipio().getId() != null) {
+            Municipio municipio = municipioRepository.findById(reporte.getMunicipio().getId())
+                    .orElseThrow(() -> new RuntimeException("Municipio no encontrado"));
+            reporte.setMunicipio(municipio);
+        }
+
+        if (reporte.getEnfermedad() != null && reporte.getEnfermedad().getId() != null) {
+            Enfermedad enfermedad = enfermedadRepository.findById(reporte.getEnfermedad().getId())
+                    .orElseThrow(() -> new RuntimeException("Enfermedad no encontrada"));
+            reporte.setEnfermedad(enfermedad);
+        }
+
+        if (reporte.getLaboratorio() != null && reporte.getLaboratorio().getId() != null) {
+            Laboratorio laboratorio = laboratorioRepository.findById(reporte.getLaboratorio().getId())
+                    .orElseThrow(() -> new RuntimeException("Laboratorio no encontrado"));
+            reporte.setLaboratorio(laboratorio);
+        }
+
+        return reporteRepository.save(reporte);
+    }
+
+    // Método para crear reporte con nombres en lugar de IDs
+    public Reporte crearReporteConNombres(Long enfermedadId, Long laboratorioId,
+                                          String departamentoNombre, String municipioNombre,
+                                          Integer cantidadCasos, LocalDate fechaDeteccion,
+                                          String observaciones) {
+
+        // Buscar o crear departamento
+        Departamento departamento = departamentoRepository.findByNombre(departamentoNombre)
+                .orElseGet(() -> {
+                    Departamento nuevoDepto = new Departamento(departamentoNombre);
+                    return departamentoRepository.save(nuevoDepto);
+                });
+
+        // Buscar o crear municipio
+        Municipio municipio = municipioRepository.findByNombreAndDepartamentoNombre(municipioNombre, departamentoNombre)
+                .orElseGet(() -> {
+                    Municipio nuevoMun = new Municipio(municipioNombre, departamento);
+                    return municipioRepository.save(nuevoMun);
+                });
+
+        // Obtener enfermedad y laboratorio
+        Enfermedad enfermedad = enfermedadRepository.findById(enfermedadId)
+                .orElseThrow(() -> new RuntimeException("Enfermedad no encontrada"));
+
+        Laboratorio laboratorio = laboratorioRepository.findById(laboratorioId)
+                .orElseThrow(() -> new RuntimeException("Laboratorio no encontrado"));
+
+        // Crear y guardar reporte
+        Reporte reporte = Reporte.builder()
+                .enfermedad(enfermedad)
+                .laboratorio(laboratorio)
+                .departamento(departamento)
+                .municipio(municipio)
+                .cantidadCasos(cantidadCasos)
+                .fechaDeteccion(fechaDeteccion)
+                .observaciones(observaciones)
+                .estado("PENDIENTE")
+                .build();
+
         return reporteRepository.save(reporte);
     }
 
     public Reporte createReporte(Reporte reporte, Long laboratorioId, Long enfermedadId) {
-        // Aquí deberías buscar el laboratorio y enfermedad por ID y asignarlos
-        // Por ahora simplemente guardamos el reporte
-        return reporteRepository.save(reporte);
+        // Implementación existente
+        return createReporte(reporte);
     }
 
     public Reporte updateReporte(Long id, Reporte reporteDetails) {
@@ -66,15 +146,11 @@ public class ReporteService {
     }
 
     public List<Reporte> getReportesPorDepartamento(String departamento) {
-        return reporteRepository.findAll().stream()
-                .filter(r -> departamento.equals(r.getDepartamento().getNombre()))
-                .collect(Collectors.toList());
+        return reporteRepository.findByDepartamentoNombre(departamento);
     }
 
     public List<Reporte> getReportesPorLaboratorio(Long laboratorioId) {
-        return reporteRepository.findAll().stream()
-                .filter(r -> laboratorioId.equals(r.getLaboratorio().getId()))
-                .collect(Collectors.toList());
+        return reporteRepository.findByLaboratorioId(laboratorioId);
     }
 
     public Map<String, Object> getEstadisticasAvanzadas() {
@@ -117,11 +193,11 @@ public class ReporteService {
 
         return reportes.stream()
                 .collect(Collectors.groupingBy(
-                        r -> r.getDepartamento().getNombre(),  // CORREGIDO: usar el nombre del departamento
+                        r -> r.getDepartamento().getNombre(),
                         Collectors.summingInt(Reporte::getCantidadCasos)
                 ))
                 .entrySet().stream()
-                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())  // CORREGIDO: usar String
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
                 .limit(limit)
                 .map(entry -> {
                     Map<String, Object> result = new HashMap<>();
@@ -152,8 +228,8 @@ public class ReporteService {
                     Map<String, Object> alerta = new HashMap<>();
                     alerta.put("id", r.getId());
                     alerta.put("enfermedad", r.getEnfermedad().getNombre());
-                    alerta.put("departamento", r.getDepartamento().getNombre());  // CORREGIDO: usar nombre
-                    alerta.put("municipio", r.getMunicipio().getNombre());       // CORREGIDO: usar nombre
+                    alerta.put("departamento", r.getDepartamento().getNombre());
+                    alerta.put("municipio", r.getMunicipio().getNombre());
                     alerta.put("casos", r.getCantidadCasos());
                     alerta.put("fecha", r.getFechaDeteccion());
                     alerta.put("nivel", r.getCantidadCasos() > 100 ? "ALTO" : "MEDIO");
@@ -189,7 +265,7 @@ public class ReporteService {
 
         return reportes.stream()
                 .collect(Collectors.groupingBy(
-                        r -> r.getDepartamento().getNombre(),  // CORREGIDO: usar nombre del departamento
+                        r -> r.getDepartamento().getNombre(),
                         Collectors.summingInt(Reporte::getCantidadCasos)
                 ));
     }

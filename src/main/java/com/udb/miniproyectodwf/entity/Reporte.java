@@ -37,11 +37,13 @@ public class Reporte {
     @JoinColumn(name = "municipio_id", nullable = false)
     private Municipio municipio;
 
+    // USAR EL CAMPO 'casos' QUE ES EL QUE EXISTE EN LA BD
     @Min(value = 1, message = "Debe haber al menos 1 caso")
+    @Column(name = "casos", nullable = false)
     private Integer cantidadCasos;
 
     @NotNull(message = "La fecha de detección es obligatoria")
-    @Column(name = "fecha_deteccion")
+    @Column(name = "fecha_deteccion", nullable = false)
     private LocalDate fechaDeteccion;
 
     private String observaciones;
@@ -54,7 +56,11 @@ public class Reporte {
     @Column(name = "estado")
     private String estado = "PENDIENTE";
 
-    // Constructor personalizado
+    @Builder.Default
+    @Column(name = "activo")
+    private Boolean activo = true;
+
+    // Constructor personalizado actualizado
     public Reporte(Laboratorio laboratorio, Enfermedad enfermedad, Departamento departamento,
                    Municipio municipio, Integer cantidadCasos, LocalDate fechaDeteccion) {
         this.laboratorio = laboratorio;
@@ -65,5 +71,22 @@ public class Reporte {
         this.fechaDeteccion = fechaDeteccion;
         this.fechaReporte = LocalDateTime.now();
         this.estado = "PENDIENTE";
+        this.activo = true;
+    }
+
+    // Constructor para el método crearReporteConNombres
+    public Reporte(Laboratorio laboratorio, Enfermedad enfermedad, Departamento departamento,
+                   Municipio municipio, Integer cantidadCasos, LocalDate fechaDeteccion,
+                   String observaciones) {
+        this.laboratorio = laboratorio;
+        this.enfermedad = enfermedad;
+        this.departamento = departamento;
+        this.municipio = municipio;
+        this.cantidadCasos = cantidadCasos;
+        this.fechaDeteccion = fechaDeteccion;
+        this.observaciones = observaciones;
+        this.fechaReporte = LocalDateTime.now();
+        this.estado = "PENDIENTE";
+        this.activo = true;
     }
 }
